@@ -1,0 +1,43 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Dockerfile.train
+# SAP AI Core – Training Job Container
+#
+# Build:  docker build -f Dockerfile.train -t <registry>/pr-anomaly-train:latest .
+# ─────────────────────────────────────────────────────────────────────────────
+
+# python:3.13-slim is also supported – all packages in requirements.txt have py3.13 wheels
+FROM python:3.13-slim AS base
+
+LABEL maintainer="your-team@your-org.com"
+LABEL description="PR Anomaly Detection – Training container for SAP AI Core"
+
+# ── System dependencies ───────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Python dependencies ───────────────────────────────────────────────────────
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ── Application source ────────────────────────────────────────────────────────
+COPY src/ ./src/
+
+# SAP AI Core mounts input data to /app/data and expects outputs under /app/models
+# These paths are configurable via environment variables (see train.py).
+RUN mkdir -p /app/data /app/models
+
+# ── Non-root user (security best-practice for SAP AI Core) ───────────────────
+RUN useradd --create-home --shell /bin/bash appuser
+USER appuser
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+# SAP AI Core executes the container; the training script reads
+#   - INPUT_DATA_PATH  (default /app/data/alldata.csv)
+#   - OUTPUT_MODEL_PATH (default /app/models/model.joblib)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+CMD ["python", "-m", "src.training.train"]

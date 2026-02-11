@@ -1,0 +1,34 @@
+# ─────────────────────────────────────────────
+# SAP BTP AI – PR Anomaly Detection
+# Python 3.13 compatible
+# ─────────────────────────────────────────────
+
+# Core ML & Data
+# pandas 2.2.3 is the first release with Python 3.13 pre-built wheels
+pandas==2.2.3
+# numpy 2.x has Python 3.13 wheels; use 2.2.x for broad compatibility
+numpy==2.2.3
+scikit-learn==1.6.1
+joblib==1.4.2
+scipy==1.15.2
+
+# Isolation Forest / Anomaly Detection (built-in sklearn)
+# No extra package needed – sklearn.ensemble.IsolationForest is used
+
+# Feature Engineering
+category-encoders==2.6.3
+
+# Serving – Flask REST API
+flask==3.1.0
+gunicorn==23.0.0
+
+# Observability / Logging
+python-json-logger==3.2.1
+
+# Environment / Config
+python-dotenv==1.0.1
+
+# Testing
+pytest==8.3.5
+pytest-cov==6.0.0
+httpx==0.28.1       # for test client calls

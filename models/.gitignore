@@ -1,0 +1,17 @@
+# models/.gitignore
+# ─────────────────────────────────────────────────────────────────────────────
+# Never commit trained model binaries to source control.
+# model.joblib can be several hundred MB.
+# Retrieve artefacts from SAP AI Core Object Store or your model registry.
+# ─────────────────────────────────────────────────────────────────────────────
+
+*.joblib
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.h5
+*.onnx
+
+# Keep metadata template under version control
+!metadata.json

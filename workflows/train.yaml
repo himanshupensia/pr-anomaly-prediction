@@ -1,0 +1,84 @@
+# workflows/train.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# SAP AI Core – Training Workflow (ArgoWorkflows-based)
+#
+# Registers a Training Pipeline in SAP AI Core.
+# Reference: https://help.sap.com/docs/ai-core/ai-core/create-training-configuration
+#
+# Replace all <placeholder> values before applying.
+#
+# Apply via SAP AI Core API:
+#   POST /v2/lm/scenarios/{scenarioId}/executables  (body = this file)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: pr-anomaly-train
+  annotations:
+    scenarios.ai.sap.com/description: "Purchase Requisition Anomaly Detection – Training"
+    scenarios.ai.sap.com/name:        "pr-anomaly-detection"
+    executables.ai.sap.com/description: "Train Isolation Forest on historical PR data"
+    executables.ai.sap.com/name:        "pr-anomaly-train"
+  labels:
+    scenarios.ai.sap.com/id:    "pr-anomaly-detection"
+    executables.ai.sap.com/id:  "pr-anomaly-train"
+    ai.sap.com/version:         "1.0.0"
+spec:
+  imagePullSecrets:
+    - name: docker-registry-secret    # created by generate-dockerhub-secret.ps1
+
+  # ── Input artefacts (data registered in AI Core Object Store) ──────────────
+  arguments:
+    parameters:
+      - name: n_estimators
+        default: "200"
+      - name: contamination
+        default: "0.05"
+
+  entrypoint: training-pipeline
+
+  templates:
+    - name: training-pipeline
+      steps:
+        - - name: train-model
+            template: train-step
+
+    - name: train-step
+      metadata:
+        labels:
+          ai.sap.com/resourcePlan: infer.s   # SAP AI Core resource plan
+      inputs:
+        artifacts:
+          - name: pr-historical-data
+            # Registered artefact name in AI Core Object Store binding
+            # Register via: POST /v2/lm/artifacts  (kind: dataset)
+            path: /app/data
+      outputs:
+        artifacts:
+          - name: model
+            # Output artefact path – SAP AI Core collects everything under this path
+            path: /app/models
+            globalName: pr-anomaly-model
+      container:
+        image: "himanshupensia/pr-anomaly-train:latest"
+        imagePullPolicy: Always
+        env:
+          - name: INPUT_DATA_PATH
+            value: "/app/data/alldata.csv"
+          - name: OUTPUT_MODEL_PATH
+            value: "/app/models/model.joblib"
+          - name: OUTPUT_META_PATH
+            value: "/app/models/metadata.json"
+          - name: CONTAMINATION
+            value: "{{inputs.parameters.contamination}}"
+          - name: N_ESTIMATORS
+            value: "{{inputs.parameters.n_estimators}}"
+          - name: RANDOM_STATE
+            value: "42"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu:    "1"
+          limits:
+            memory: "4Gi"
+            cpu:    "2"

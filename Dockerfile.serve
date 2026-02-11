@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Dockerfile.serve
+# SAP AI Core – Serving / Inference Container
+#
+# Build:  docker build -f Dockerfile.serve -t <registry>/pr-anomaly-serve:latest .
+# ─────────────────────────────────────────────────────────────────────────────
+
+# python:3.13-slim is also supported – all packages in requirements.txt have py3.13 wheels
+FROM python:3.13-slim AS base
+
+LABEL maintainer="your-team@your-org.com"
+LABEL description="PR Anomaly Detection – Serving container for SAP AI Core"
+
+# ── System dependencies ───────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Python dependencies ───────────────────────────────────────────────────────
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ── Application source + pre-trained model ────────────────────────────────────
+COPY src/ ./src/
+COPY models/ ./models/
+
+# ── Non-root user ────────────────────────────────────────────────────────────
+RUN useradd --create-home --shell /bin/bash appuser \
+    && chown -R appuser:appuser /app
+USER appuser
+
+# ── Runtime config ────────────────────────────────────────────────────────────
+# SAP AI Core routes inference traffic to port 8080.
+# Gunicorn workers are configurable via WEB_CONCURRENCY.
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    MODEL_PATH=/app/models/model.joblib \
+    PORT=8080 \
+    WEB_CONCURRENCY=2
+
+EXPOSE 8080
+
+# ── Health check (SAP AI Core liveness probe) ─────────────────────────────────
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8080/v1/health || exit 1
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+CMD ["sh", "-c", \
+     "gunicorn --bind 0.0.0.0:${PORT} \
+               --workers ${WEB_CONCURRENCY} \
+               --timeout 120 \
+               --access-logfile - \
+               --error-logfile - \
+               'src.serving.app:create_app()'"]

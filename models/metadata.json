@@ -1,0 +1,34 @@
+{
+  "model_type": "IsolationForest",
+  "feature_cols": [
+    "pr_type_enc",
+    "company_code_enc",
+    "plant_enc",
+    "purchasing_group_enc",
+    "material_group_enc",
+    "unit_enc",
+    "currency_enc",
+    "gl_account_enc",
+    "cost_center_enc",
+    "wbs_element_enc",
+    "profit_center_enc",
+    "quantity",
+    "net_price",
+    "day_of_week",
+    "month",
+    "text_length"
+  ],
+  "threshold": -1.431146867680866e-17,
+  "training_stats": {
+    "n_samples": 107,
+    "n_features": 16,
+    "contamination": 0.05,
+    "n_estimators": 200,
+    "score_mean": 0.08267964395525648,
+    "score_std": 0.04844807541435416,
+    "score_min": -0.12708583622352887,
+    "score_max": 0.14882138653384214,
+    "trained_at": "2026-02-11T04:41:33.121036+00:00"
+  },
+  "schema_version": "1.0"
+}

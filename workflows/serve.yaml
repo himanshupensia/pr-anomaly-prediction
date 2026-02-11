@@ -1,0 +1,89 @@
+# workflows/serve.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# SAP AI Core – Serving Workflow (KServe / InferenceService)
+#
+# Deploys the trained PR Anomaly Detection model as a REST endpoint.
+# Reference: https://help.sap.com/docs/ai-core/ai-core/deploy-model
+#
+# Replace all <placeholder> values before applying.
+#
+# Apply via SAP AI Core API:
+#   POST /v2/lm/scenarios/{scenarioId}/executables  (body = this file)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: pr-anomaly-serve
+  annotations:
+    scenarios.ai.sap.com/description: "Purchase Requisition Anomaly Detection – Serving"
+    scenarios.ai.sap.com/name:        "pr-anomaly-detection"
+    executables.ai.sap.com/description: "Serve Isolation Forest anomaly scoring API"
+    executables.ai.sap.com/name:        "pr-anomaly-serve"
+  labels:
+    scenarios.ai.sap.com/id:    "pr-anomaly-detection"
+    executables.ai.sap.com/id:  "pr-anomaly-serve"
+    ai.sap.com/version:         "1.0.0"
+spec:
+  # ── Image ──────────────────────────────────────────────────────────────────
+  containers:
+    - name: kserve-container
+      image: "himanshupensia/pr-anomaly-serve:latest"
+      imagePullPolicy: Always
+
+      # SAP AI Core injects the model artefact path via this env var
+      env:
+        - name: STORAGE_URI
+          value: "{{inputs.artifacts.model}}"    # bound at deployment creation time
+        - name: MODEL_PATH
+          value: "/app/models/model.joblib"
+        - name: PORT
+          value: "8080"
+        - name: WEB_CONCURRENCY
+          value: "2"
+
+      ports:
+        - containerPort: 8080
+          protocol: TCP
+
+      # ── Probes ─────────────────────────────────────────────────────────────
+      livenessProbe:
+        httpGet:
+          path:   /v1/health
+          port:   8080
+        initialDelaySeconds: 30
+        periodSeconds:       15
+        failureThreshold:    3
+
+      readinessProbe:
+        httpGet:
+          path:   /v1/health
+          port:   8080
+        initialDelaySeconds: 20
+        periodSeconds:       10
+        failureThreshold:    3
+
+      # ── Resources ──────────────────────────────────────────────────────────
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu:    "250m"
+        limits:
+          memory: "1Gi"
+          cpu:    "1"
+
+  # ── Model artefact input ───────────────────────────────────────────────────
+  inputs:
+    artifacts:
+      - name: model
+        # Reference the output artefact from the training workflow
+        # Bind at deployment time:
+        #   POST /v2/lm/deployments  →  "inputArtifactBindings"
+        path: /app/models
+
+  imagePullSecrets:
+    - name: docker-registry-secret
+
+  # ── Scaling ────────────────────────────────────────────────────────────────
+  # SAP AI Core resource plan controls actual scaling limits.
+  # Use "infer.s" for standard inference workloads.
+  resourcePlan: infer.s
