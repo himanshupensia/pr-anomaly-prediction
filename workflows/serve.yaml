@@ -39,5 +39,3 @@ spec:
             value: "/app/models/model.joblib"
           - name: PORT
             value: "8080"
-          - name: WEB_CONCURRENCY
-            value: "2"
