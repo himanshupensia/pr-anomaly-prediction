@@ -81,7 +81,7 @@ spec:
         path: /app/models
 
   imagePullSecrets:
-    - name: docker-registry-secret
+    - name: docker-him
 
   # ── Scaling ────────────────────────────────────────────────────────────────
   # SAP AI Core resource plan controls actual scaling limits.

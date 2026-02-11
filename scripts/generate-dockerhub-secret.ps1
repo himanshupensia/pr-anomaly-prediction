@@ -65,7 +65,7 @@ param(
     [string] $RegistryServer   = "docker.io",
     [Parameter(Mandatory)][string] $RegistryUsername,
     [Parameter(Mandatory)][string] $RegistryPassword,
-    [string] $SecretName       = "docker-registry-secret"
+    [string] $SecretName       = "docker-him"
 )
 
 Set-StrictMode -Version Latest

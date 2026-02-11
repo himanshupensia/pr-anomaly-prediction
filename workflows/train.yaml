@@ -25,7 +25,7 @@ metadata:
     ai.sap.com/version:         "1.0.0"
 spec:
   imagePullSecrets:
-    - name: docker-registry-secret    # created by generate-dockerhub-secret.ps1
+    - name: docker-him   # created by generate-dockerhub-secret.ps1
 
   # ── Input artefacts (data registered in AI Core Object Store) ──────────────
   arguments:
