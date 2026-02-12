@@ -37,5 +37,5 @@ spec:
           env:
           - name: MODEL_PATH
             value: "/app/models/model.joblib"
-          - name: PORT
-            value: "8080"
+          - name: METADATA_PATH
+            value: "/app/models/metadata.json"
